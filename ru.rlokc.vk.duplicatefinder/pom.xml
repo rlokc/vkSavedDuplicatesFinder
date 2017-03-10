@@ -3,4 +3,29 @@
   <groupId>ru.rlokc.vk</groupId>
   <artifactId>ru.rlokc.vk.duplicatefinder</artifactId>
   <version>0.0.1-SNAPSHOT</version>
+  <dependencies>
+  	<dependency>
+  		<groupId>com.vk.api</groupId>
+  		<artifactId>sdk</artifactId>
+  		<version>0.4.3</version>
+  	</dependency>
+  </dependencies>
+  
+  <build>
+    <plugins>
+      <plugin>
+         <artifactId>maven-jar-plugin</artifactId>
+         <version>2.4</version>
+         <configuration>
+           <archive>
+             <manifest>
+               <addClasspath>true</addClasspath>
+               <classpathPrefix>target/dependency/</classpathPrefix>
+               <mainClass>ru.rlokc.vk.duplicatefinder.Application</mainClass>
+             </manifest>
+           </archive>
+         </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>
