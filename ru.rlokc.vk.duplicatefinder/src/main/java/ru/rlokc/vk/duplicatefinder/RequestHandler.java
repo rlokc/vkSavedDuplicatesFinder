@@ -31,7 +31,7 @@ public class RequestHandler extends AbstractHandler {
 	
 	@Override
 	public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-
+		System.out.println("target");
 		if (target.equals("/info")) {
 			try {
 				UserActor actor = new UserActor(Integer.parseInt(baseRequest.getParameter("user")), baseRequest.getParameter("token"));
@@ -71,7 +71,7 @@ public class RequestHandler extends AbstractHandler {
 	}
 	
 	private String getRedirectUri() {
-		return host + "/callback";
+		return "https://oauth.vk.com/blank.html";
 	}
 	
 	private String getOAuthUrl() {

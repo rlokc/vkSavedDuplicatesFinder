@@ -9,16 +9,42 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.HandlerCollection;
+import org.eclipse.jetty.server.handler.ResourceHandler;
+
 public class Application {
 	private final static String PROPERTIES_FILE = "config.properties";
 	
 	public static void main(String[] args) throws Exception {
 		Properties properties = readProperties();
+		initServer(properties);
+	}
+	
+	private static void initServer(Properties properties) throws Exception {
+		Integer port = Integer.valueOf(properties.getProperty("server.port"));
+		String host = properties.getProperty("server.host");
 		
-		HttpTransportClient client = new HttpTransportClient();
-		VkApiClient apiClient = new VkApiClient(client);
+		Integer clientId = Integer.valueOf(properties.getProperty("client.id"));
+		String clientSecret = properties.getProperty("client.secret");
 		
+		HandlerCollection handlers = new HandlerCollection();
 		
+		ResourceHandler resourceHandler = new ResourceHandler();
+		resourceHandler.setDirectoriesListed(true);
+		resourceHandler.setWelcomeFiles(new String[] {"index.html"});
+		resourceHandler.setResourceBase(Application.class.getResource("/static").getPath());
+		
+
+		VkApiClient vk = new VkApiClient(new HttpTransportClient());
+		handlers.setHandlers(new Handler[] {resourceHandler, new RequestHandler(vk, clientId, clientSecret, host)});
+		
+		Server server = new Server(port);
+		server.setHandler(handlers);
+		
+		server.start();
+		server.join();		
 	}
 	
 	private static Properties readProperties() throws FileNotFoundException {
