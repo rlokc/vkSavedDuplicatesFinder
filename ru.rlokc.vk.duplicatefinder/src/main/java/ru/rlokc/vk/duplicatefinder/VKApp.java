@@ -3,23 +3,52 @@ package ru.rlokc.vk.duplicatefinder;
 import com.vk.api.sdk.client.VkApiClient;
 import com.vk.api.sdk.httpclient.HttpTransportClient;
 
+import javafx.application.Platform;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.Properties;
 
 import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.NCSARequestLog;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.HandlerCollection;
+import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 
-public class Application {
+public class VKApp {
 	private final static String PROPERTIES_FILE = "config.properties";
+	private static Server server;
+	
+	private static BrowserThread browserThreadobj;
+	private static ServerThread serverThreadobj;
 	
 	public static void main(String[] args) throws Exception {
+		
+		browserThreadobj = new BrowserThread();
+		Thread browserThread = new Thread(browserThreadobj);
+		browserThread.start();
+		
+		synchronized(browserThreadobj) {
+			browserThreadobj.wait();
+		}
+		
 		Properties properties = readProperties();
-		initServer(properties);
+		serverThreadobj = new ServerThread(properties);
+		Thread serverThread = new Thread(serverThreadobj);
+		serverThread.start();
+		
+		synchronized(serverThreadobj) {
+			serverThreadobj.wait();
+		}
+		
+		goToLoginPage();
+
 	}
 	
 	private static void initServer(Properties properties) throws Exception {
@@ -34,21 +63,35 @@ public class Application {
 		ResourceHandler resourceHandler = new ResourceHandler();
 		resourceHandler.setDirectoriesListed(true);
 		resourceHandler.setWelcomeFiles(new String[] {"index.html"});
-		resourceHandler.setResourceBase(Application.class.getResource("/static").getPath());
+		resourceHandler.setResourceBase(VKApp.class.getResource("/static").getPath());
 		
 
 		VkApiClient vk = new VkApiClient(new HttpTransportClient());
 		handlers.setHandlers(new Handler[] {resourceHandler, new RequestHandler(vk, clientId, clientSecret, host)});
 		
-		Server server = new Server(port);
+		server = new Server(port);
 		server.setHandler(handlers);
+		
+		//Initializing logging
+		NCSARequestLog requestLog = new NCSARequestLog();
+		requestLog.setFilename("/Users/rlokc/Programming/vkSavedDuplicateFinder/logs/yyyy_mm_dd.request.log");
+		requestLog.setFilenameDateFormat("yyyy_MM_dd");
+		requestLog.setRetainDays(15);
+		requestLog.setAppend(true);
+		requestLog.setExtended(true);
+		requestLog.setLogCookies(true);
+		requestLog.setLogTimeZone("GMT");
+		RequestLogHandler requestLogHandler = new RequestLogHandler();
+		requestLogHandler.setRequestLog(requestLog);
+		handlers.addHandler(requestLogHandler);
 		
 		server.start();
 		server.join();		
 	}
 	
+	
 	private static Properties readProperties() throws FileNotFoundException {
-		InputStream inputStream = Application.class.getClassLoader().getResourceAsStream(PROPERTIES_FILE);
+		InputStream inputStream = VKApp.class.getClassLoader().getResourceAsStream(PROPERTIES_FILE);
 		if (inputStream == null)
 			throw new FileNotFoundException("Property file " + PROPERTIES_FILE + " not found in classpath");
 		
@@ -59,6 +102,17 @@ public class Application {
 		} catch (IOException e) {
 			throw new RuntimeException("Incorrect properties file");
 		}
+	}
+	
+	private static void goToLoginPage() {
+		final RequestHandler handler = serverThreadobj.getRequestHandler();
+		final Browser browser = browserThreadobj.getBrowser();
+		Platform.runLater(new Runnable() {
+			public void run() {
+				browser.loadURL(handler.getOAuthUrl());
+			}
+		});
+		return;
 	}
 }
 

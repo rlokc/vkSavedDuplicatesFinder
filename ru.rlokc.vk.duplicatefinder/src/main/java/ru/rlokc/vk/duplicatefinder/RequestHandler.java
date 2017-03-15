@@ -31,7 +31,7 @@ public class RequestHandler extends AbstractHandler {
 	
 	@Override
 	public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-		System.out.println("target");
+		System.out.println(baseRequest);
 		if (target.equals("/info")) {
 			try {
 				UserActor actor = new UserActor(Integer.parseInt(baseRequest.getParameter("user")), baseRequest.getParameter("token"));
@@ -70,15 +70,15 @@ public class RequestHandler extends AbstractHandler {
 		}
 	}
 	
-	private String getRedirectUri() {
-		return "https://oauth.vk.com/blank.html";
+	public String getRedirectUri() {
+		return host;
 	}
 	
-	private String getOAuthUrl() {
+	public String getOAuthUrl() {
 		return "https://oauth.vk.com/authorize?client_id=" + clientId + "&display=page&redirect_uri=" + getRedirectUri() + "&scope=groups&response_type=code";
 	}
  	
-	private String getInfoPage(UserXtrCounters user) {
+	public String getInfoPage(UserXtrCounters user) {
 		return "Hello <a href='https://vk.com/id'>" + user.getId() + "'>" + user.getFirstName() + "</a>";
 	}
 	
