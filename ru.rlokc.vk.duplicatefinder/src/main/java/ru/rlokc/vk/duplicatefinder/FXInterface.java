@@ -19,7 +19,7 @@ public class FXInterface extends Application {
 	@Override
 	public void start(Stage stage) {
 		stage.setTitle("Henlo");
-		browser = new Browser();
+		browser = new Browser(thread);
 		thread.setInterface(this);
 		// After we've initialized the browser, get ready to recieve stuff
 		synchronized(thread) {

@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.SynchronousQueue;
 
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.NCSARequestLog;
@@ -27,6 +28,8 @@ public class VKApp {
 	
 	private static BrowserThread browserThreadobj;
 	private static ServerThread serverThreadobj;
+	
+	public final static SynchronousQueue<OAuthToken> tokenQueue = new SynchronousQueue<OAuthToken>();
 	
 	public static void main(String[] args) throws Exception {
 		
@@ -48,7 +51,11 @@ public class VKApp {
 		}
 		
 		goToLoginPage();
-
+		
+		//Wait until we recieve the code from the authentication flow
+		OAuthToken token = tokenQueue.take();
+		serverThreadobj.getRequestHandler().setToken(token);
+		goGetToken();
 	}
 	
 	private static void initServer(Properties properties) throws Exception {
@@ -110,6 +117,17 @@ public class VKApp {
 		Platform.runLater(new Runnable() {
 			public void run() {
 				browser.loadURL(handler.getOAuthUrl());
+			}
+		});
+		return;
+	}
+	
+	private static void goGetToken() {
+		final RequestHandler handler = serverThreadobj.getRequestHandler();
+		final Browser browser = browserThreadobj.getBrowser();
+		Platform.runLater(new Runnable() {
+			public void run() {
+				browser.loadURL(handler.getTokenUrl());
 			}
 		});
 		return;

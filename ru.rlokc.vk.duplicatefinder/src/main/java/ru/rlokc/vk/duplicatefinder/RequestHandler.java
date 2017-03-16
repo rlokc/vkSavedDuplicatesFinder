@@ -21,6 +21,7 @@ public class RequestHandler extends AbstractHandler {
 	private final int clientId;
 	private final String host;
 	private final VkApiClient vk;
+	private OAuthToken token;
 	
 	public RequestHandler(VkApiClient vk, int clientId, String clientSecret, String host) {
 		this.vk = vk;
@@ -50,26 +51,13 @@ public class RequestHandler extends AbstractHandler {
 			
 			baseRequest.setHandled(true);
 			return;
-		} else if (target.equals("/callback")) {
-			try {
-				UserAuthResponse authResponse = vk.oauth().userAuthorizationCodeFlow(clientId, clientSecret, getRedirectUri(), baseRequest.getParameter("code")).execute();
-				response.sendRedirect("/info?token=" + authResponse.getAccessToken() + "&user=" + authResponse.getUserId());
-			} catch (Exception e) {
-				response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-				response.getWriter().println("error");
-				response.setContentType("text/html;charset=utf-8");
-				e.printStackTrace();
-			}
-			
-			baseRequest.setHandled(true);
-			return;
 		} else if (target.equals("/login")) {
 			response.sendRedirect(getOAuthUrl());
 			baseRequest.setHandled(true);
 			return;
 		}
 	}
-	
+		
 	public String getRedirectUri() {
 		return host;
 	}
@@ -77,9 +65,17 @@ public class RequestHandler extends AbstractHandler {
 	public String getOAuthUrl() {
 		return "https://oauth.vk.com/authorize?client_id=" + clientId + "&display=page&redirect_uri=" + getRedirectUri() + "&scope=groups&response_type=code";
 	}
+	
+	public String getTokenUrl() {
+		return "https://oauth.vk.com/authorize?client_id=" + clientId + "&clientSecret=" + clientSecret + "&redirect_uri=" + getRedirectUri() + "&code=" + token.code;
+	}
  	
 	public String getInfoPage(UserXtrCounters user) {
 		return "Hello <a href='https://vk.com/id'>" + user.getId() + "'>" + user.getFirstName() + "</a>";
+	}
+	
+	public void setToken(OAuthToken token) {
+		this.token = token;
 	}
 	
 }
