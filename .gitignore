@@ -13,3 +13,6 @@ hs_err_pid*
 
 # OS X garbage
 .DS_Store
+
+# File with secrets and stuff
+config.properties
