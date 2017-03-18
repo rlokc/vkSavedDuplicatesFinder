@@ -32,6 +32,7 @@ public class VkRequester {
 		}
 	}
 	
+	//TODO: Move all the authorization routine methods to a separate class
 	public String getRedirectUri() {
 		return host;
 	}
