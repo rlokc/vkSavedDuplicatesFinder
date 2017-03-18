@@ -8,10 +8,6 @@ import javafx.application.Platform;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.SynchronousQueue;
 
@@ -55,7 +51,10 @@ public class VKApp {
 		//Wait until we recieve the code from the authentication flow
 		OAuthToken token = tokenQueue.take();
 		serverThreadobj.getRequestHandler().setToken(token);
+		tokenQueue.put(token);
 		goGetToken();
+		token = tokenQueue.take();
+		System.out.println(token);
 	}
 	
 	private static void initServer(Properties properties) throws Exception {
@@ -116,7 +115,7 @@ public class VKApp {
 		final Browser browser = browserThreadobj.getBrowser();
 		Platform.runLater(new Runnable() {
 			public void run() {
-				browser.loadURL(handler.getOAuthUrl());
+				browser.loadURL(handler.getCodeUrl());
 			}
 		});
 		return;

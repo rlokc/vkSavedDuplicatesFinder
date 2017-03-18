@@ -52,7 +52,7 @@ public class RequestHandler extends AbstractHandler {
 			baseRequest.setHandled(true);
 			return;
 		} else if (target.equals("/login")) {
-			response.sendRedirect(getOAuthUrl());
+			response.sendRedirect(getCodeUrl());
 			baseRequest.setHandled(true);
 			return;
 		}
@@ -62,7 +62,7 @@ public class RequestHandler extends AbstractHandler {
 		return host;
 	}
 	
-	public String getOAuthUrl() {
+	public String getCodeUrl() {
 		return "https://oauth.vk.com/authorize?client_id=" + clientId + "&display=page&redirect_uri=" + getRedirectUri() + "&scope=groups&response_type=code";
 	}
 	
