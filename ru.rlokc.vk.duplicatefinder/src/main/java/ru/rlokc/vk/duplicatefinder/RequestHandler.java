@@ -67,7 +67,7 @@ public class RequestHandler extends AbstractHandler {
 	}
 	
 	public String getTokenUrl() {
-		return "https://oauth.vk.com/authorize?client_id=" + clientId + "&clientSecret=" + clientSecret + "&redirect_uri=" + getRedirectUri() + "&code=" + token.code;
+		return "https://oauth.vk.com/access_token?client_id=" + clientId + "&client_secret=" + clientSecret + "&redirect_uri=" + getRedirectUri() + "&code=" + token.code;
 	}
  	
 	public String getInfoPage(UserXtrCounters user) {

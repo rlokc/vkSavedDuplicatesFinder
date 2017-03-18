@@ -30,7 +30,8 @@ public class Browser extends Region {
 				public void changed(ObservableValue ov, State oldState, State newState) {
 					if (newState == State.SUCCEEDED) {
 						String url = webEngine.getLocation();
-						System.out.print(url + "\n");
+						String html = (String) webEngine.executeScript("document.documentElement.outerHTML");
+						System.out.print(url + "\n" + html + "\n");
 						int codeIndex = url.indexOf("code=");
 						if (codeIndex != -1) {
 							String code = url.substring(codeIndex + "code=".length());
