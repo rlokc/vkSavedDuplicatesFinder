@@ -59,7 +59,7 @@ public class Browser extends Region {
 						// If we're on the second step (getting the token), fetch the <pre> element from the html
 						} else if (authStep == AuthorizationStep.TOKEN) {
 							try {
-								OAuthToken token = VKApp.tokenQueue.take();
+								OAuthToken token = VKApp.token;
 								System.out.println(token);
 								String oldCode = token.code;
 								JSObject pre = (JSObject) webEngine.executeScript("document.getElementsByTagName('pre')[0]");

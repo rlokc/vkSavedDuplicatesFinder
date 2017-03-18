@@ -26,6 +26,8 @@ public class VKApp {
 	private static ServerThread serverThreadobj;
 	
 	public final static SynchronousQueue<OAuthToken> tokenQueue = new SynchronousQueue<OAuthToken>();
+	//Oh boy this one's gonna bite me in the ass later, wouldn't it?
+	public static OAuthToken token;
 	
 	public static void main(String[] args) throws Exception {
 		
@@ -49,9 +51,8 @@ public class VKApp {
 		goToLoginPage();
 		
 		//Wait until we recieve the code from the authentication flow
-		OAuthToken token = tokenQueue.take();
+		token = tokenQueue.take();
 		serverThreadobj.getRequestHandler().setToken(token);
-		tokenQueue.put(token);
 		goGetToken();
 		token = tokenQueue.take();
 		System.out.println(token);
