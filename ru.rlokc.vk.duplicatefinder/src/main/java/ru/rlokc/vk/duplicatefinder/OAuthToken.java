@@ -8,6 +8,6 @@ public class OAuthToken {
 	
 	@Override
 	public String toString() {
-		return "code: " + code + " access_token: " + access_token + " expires_in: " + " user_id: " + user_id;
+		return "code: " + code + " access_token: " + access_token + " expires_in: " + expires_in + " user_id: " + user_id;
 	}
 }

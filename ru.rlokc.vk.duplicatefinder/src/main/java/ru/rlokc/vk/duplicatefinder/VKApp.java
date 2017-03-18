@@ -8,6 +8,8 @@ import javafx.application.Platform;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.CookieHandler;
+import java.net.CookieManager;
 import java.util.Properties;
 import java.util.concurrent.SynchronousQueue;
 
@@ -29,7 +31,14 @@ public class VKApp {
 	//Oh boy this one's gonna bite me in the ass later, wouldn't it?
 	public static OAuthToken token;
 	
+	private static VkRequester vkRequester;
+	
 	public static void main(String[] args) throws Exception {
+		
+		//FIXME: Cookies init, doesn't work and makes the login invalid for some reason, 
+//		MyCookieStore cookie_store = new MyCookieStore();
+//		CookieManager cookie_manager = new CookieManager(cookie_store, new MyCookiePolicy());
+//		CookieHandler.setDefault(cookie_manager);
 		
 		browserThreadobj = new BrowserThread();
 		Thread browserThread = new Thread(browserThreadobj);
@@ -39,23 +48,37 @@ public class VKApp {
 			browserThreadobj.wait();
 		}
 		
-		Properties properties = readProperties();
-		serverThreadobj = new ServerThread(properties);
-		Thread serverThread = new Thread(serverThreadobj);
-		serverThread.start();
+//		Properties properties = readProperties();
+//		serverThreadobj = new ServerThread(properties);
+//		Thread serverThread = new Thread(serverThreadobj);
+//		serverThread.start();
+//		
+//		synchronized(serverThreadobj) {
+//			serverThreadobj.wait();
+//		}
 		
-		synchronized(serverThreadobj) {
-			serverThreadobj.wait();
-		}
+		Properties properties = readProperties();
+		VkApiClient vk = new VkApiClient(new HttpTransportClient());
+		Integer port = Integer.valueOf(properties.getProperty("server.port"));
+		String host = properties.getProperty("server.host");
+		Integer clientId = Integer.valueOf(properties.getProperty("client.id"));
+		String clientSecret = properties.getProperty("client.secret");
+		vkRequester = new VkRequester(vk, clientId, clientSecret, host);
 		
 		goToLoginPage();
 		
 		//Wait until we recieve the code from the authentication flow
+//		token = tokenQueue.take();
+//		serverThreadobj.getRequestHandler().setToken(token);
+//		goGetToken();
+//		token = tokenQueue.take();
+//		serverThreadobj.getRequestHandler().setToken(token);
+		
 		token = tokenQueue.take();
-		serverThreadobj.getRequestHandler().setToken(token);
 		goGetToken();
 		token = tokenQueue.take();
-		System.out.println(token);
+		vkRequester.setToken(token);
+		vkRequester.printInfo();
 	}
 	
 	private static void initServer(Properties properties) throws Exception {
@@ -112,22 +135,20 @@ public class VKApp {
 	}
 	
 	private static void goToLoginPage() {
-		final RequestHandler handler = serverThreadobj.getRequestHandler();
 		final Browser browser = browserThreadobj.getBrowser();
 		Platform.runLater(new Runnable() {
 			public void run() {
-				browser.loadURL(handler.getCodeUrl());
+				browser.loadURL(vkRequester.getCodeUrl());
 			}
 		});
 		return;
 	}
 	
 	private static void goGetToken() {
-		final RequestHandler handler = serverThreadobj.getRequestHandler();
 		final Browser browser = browserThreadobj.getBrowser();
 		Platform.runLater(new Runnable() {
 			public void run() {
-				browser.loadURL(handler.getTokenUrl());
+				browser.loadURL(vkRequester.getTokenUrl(token));
 			}
 		});
 		return;

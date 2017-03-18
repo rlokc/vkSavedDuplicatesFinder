@@ -35,8 +35,9 @@ public class RequestHandler extends AbstractHandler {
 		System.out.println(baseRequest);
 		if (target.equals("/info")) {
 			try {
-				UserActor actor = new UserActor(Integer.parseInt(baseRequest.getParameter("user")), baseRequest.getParameter("token"));
-				List<UserXtrCounters> getUsersResponse = vk.users().get(actor).userIds(baseRequest.getParameter("user")).execute();
+				System.out.println(token);
+				UserActor actor = new UserActor(token.user_id, token.access_token);
+				List<UserXtrCounters> getUsersResponse = vk.users().get(actor).userIds(Integer.toString(token.user_id)).execute();
 				UserXtrCounters user = getUsersResponse.get(0);
 				
 				response.setContentType("text/html;charset=utf-8");
@@ -69,9 +70,14 @@ public class RequestHandler extends AbstractHandler {
 	public String getTokenUrl() {
 		return "https://oauth.vk.com/access_token?client_id=" + clientId + "&client_secret=" + clientSecret + "&redirect_uri=" + getRedirectUri() + "&code=" + token.code;
 	}
+	
+	public String getTokenUrl(OAuthToken token) {
+		this.token = token;
+		return getTokenUrl();
+	}
  	
 	public String getInfoPage(UserXtrCounters user) {
-		return "Hello <a href='https://vk.com/id'>" + user.getId() + "'>" + user.getFirstName() + "</a>";
+		return "Hello <a href='https://vk.com/id" + user.getId() + "'>" + user.getFirstName() + "</a>";
 	}
 	
 	public void setToken(OAuthToken token) {
