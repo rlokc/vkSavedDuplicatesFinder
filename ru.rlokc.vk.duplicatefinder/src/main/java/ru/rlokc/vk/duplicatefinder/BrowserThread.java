@@ -3,7 +3,6 @@ package ru.rlokc.vk.duplicatefinder;
 public class BrowserThread implements Runnable {
 	
 	private FXInterface fxWebView;
-	private OAuthToken token;
 
 	public void run() {	
 		fxWebView = new FXInterface();

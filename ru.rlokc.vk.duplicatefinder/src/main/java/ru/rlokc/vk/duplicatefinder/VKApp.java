@@ -13,23 +13,14 @@ import java.net.CookieManager;
 import java.util.Properties;
 import java.util.concurrent.SynchronousQueue;
 
-import org.eclipse.jetty.server.Handler;
-import org.eclipse.jetty.server.NCSARequestLog;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.handler.HandlerCollection;
-import org.eclipse.jetty.server.handler.RequestLogHandler;
-import org.eclipse.jetty.server.handler.ResourceHandler;
 
 public class VKApp {
-	private final static String PROPERTIES_FILE = "config.properties";
-	private static Server server;
 	
+	private final static String PROPERTIES_FILE = "config.properties";	
 	private static BrowserThread browserThreadobj;
-	private static ServerThread serverThreadobj;
-	
-	public final static SynchronousQueue<OAuthToken> tokenQueue = new SynchronousQueue<OAuthToken>();
-	//Oh boy this one's gonna bite me in the ass later, wouldn't it?
 	public static OAuthToken token;
+	//Basically a blocking queue for mutexing the token, because I'm too lazy to make an actual mutex
+	public final static SynchronousQueue<OAuthToken> tokenQueue = new SynchronousQueue<OAuthToken>();
 	
 	private static VkRequester vkRequester;
 	
@@ -48,78 +39,14 @@ public class VKApp {
 			browserThreadobj.wait();
 		}
 		
-//		Properties properties = readProperties();
-//		serverThreadobj = new ServerThread(properties);
-//		Thread serverThread = new Thread(serverThreadobj);
-//		serverThread.start();
-//		
-//		synchronized(serverThreadobj) {
-//			serverThreadobj.wait();
-//		}
-		
 		Properties properties = readProperties();
-		VkApiClient vk = new VkApiClient(new HttpTransportClient());
-		Integer port = Integer.valueOf(properties.getProperty("server.port"));
-		String host = properties.getProperty("server.host");
-		Integer clientId = Integer.valueOf(properties.getProperty("client.id"));
-		String clientSecret = properties.getProperty("client.secret");
-		vkRequester = new VkRequester(vk, clientId, clientSecret, host);
+		vkRequester = initRequester(properties);
 		
-		goToLoginPage();
-		
-		//Wait until we recieve the code from the authentication flow
-//		token = tokenQueue.take();
-//		serverThreadobj.getRequestHandler().setToken(token);
-//		goGetToken();
-//		token = tokenQueue.take();
-//		serverThreadobj.getRequestHandler().setToken(token);
-		
-		token = tokenQueue.take();
-		goGetToken();
-		token = tokenQueue.take();
-		vkRequester.setToken(token);
+		authorize();
+
 		vkRequester.printInfo();
 	}
-	
-	private static void initServer(Properties properties) throws Exception {
-		Integer port = Integer.valueOf(properties.getProperty("server.port"));
-		String host = properties.getProperty("server.host");
-		
-		Integer clientId = Integer.valueOf(properties.getProperty("client.id"));
-		String clientSecret = properties.getProperty("client.secret");
-		
-		HandlerCollection handlers = new HandlerCollection();
-		
-		ResourceHandler resourceHandler = new ResourceHandler();
-		resourceHandler.setDirectoriesListed(true);
-		resourceHandler.setWelcomeFiles(new String[] {"index.html"});
-		resourceHandler.setResourceBase(VKApp.class.getResource("/static").getPath());
-		
 
-		VkApiClient vk = new VkApiClient(new HttpTransportClient());
-		handlers.setHandlers(new Handler[] {resourceHandler, new RequestHandler(vk, clientId, clientSecret, host)});
-		
-		server = new Server(port);
-		server.setHandler(handlers);
-		
-		//Initializing logging
-		NCSARequestLog requestLog = new NCSARequestLog();
-		requestLog.setFilename("/Users/rlokc/Programming/vkSavedDuplicateFinder/logs/yyyy_mm_dd.request.log");
-		requestLog.setFilenameDateFormat("yyyy_MM_dd");
-		requestLog.setRetainDays(15);
-		requestLog.setAppend(true);
-		requestLog.setExtended(true);
-		requestLog.setLogCookies(true);
-		requestLog.setLogTimeZone("GMT");
-		RequestLogHandler requestLogHandler = new RequestLogHandler();
-		requestLogHandler.setRequestLog(requestLog);
-		handlers.addHandler(requestLogHandler);
-		
-		server.start();
-		server.join();		
-	}
-	
-	
 	private static Properties readProperties() throws FileNotFoundException {
 		InputStream inputStream = VKApp.class.getClassLoader().getResourceAsStream(PROPERTIES_FILE);
 		if (inputStream == null)
@@ -132,6 +59,35 @@ public class VKApp {
 		} catch (IOException e) {
 			throw new RuntimeException("Incorrect properties file");
 		}
+	}
+	
+	private static VkRequester initRequester(Properties properties) {
+		VkApiClient vk = new VkApiClient(new HttpTransportClient());
+		Integer port = Integer.valueOf(properties.getProperty("server.port"));
+		String host = properties.getProperty("server.host");
+		Integer clientId = Integer.valueOf(properties.getProperty("client.id"));
+		String clientSecret = properties.getProperty("client.secret");
+		vkRequester = new VkRequester(vk, clientId, clientSecret, host);
+		return vkRequester;
+	}
+	
+	private static void authorize() {
+		goToLoginPage();
+		//Wait until we receive the code from the authentication flow
+		try {
+			token = tokenQueue.take();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+			System.out.println("Something has gone horribly wrong, the flow is broken!");
+		}
+		goGetToken();
+		try {
+			token = tokenQueue.take();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+			System.out.println("Something has gone horribly wrong, the flow is broken!");
+		}
+		vkRequester.setToken(token);
 	}
 	
 	private static void goToLoginPage() {

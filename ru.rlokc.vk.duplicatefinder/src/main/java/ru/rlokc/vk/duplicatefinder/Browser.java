@@ -20,13 +20,10 @@ public class Browser extends Region {
 	final private WebView browser = new WebView();
 	final private WebEngine webEngine = browser.getEngine();
 	
-	static private BrowserThread thread;
-	
 	public Browser(BrowserThread thread) {
 		getStyleClass().add("browser");
 		getChildren().add(browser);
-		
-		this.thread = thread;
+
 		
 		webEngine.getLoadWorker().stateProperty().addListener(
 			new ChangeListener<State>() {
